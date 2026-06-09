@@ -1,6 +1,6 @@
 # 🏢 Pixel Agent Office — AI Agent Management System
 
-![Pixel Agent Office Workspace](office_demo.png)
+![Pixel Agent Office Workspace](screenshot.png)
 
 Welcome to the **Pixel Agent Office**, a fully functional 8-bit retro-RPG style AI agent management workspace. This system models a virtual office where each desk and character represents an autonomous AI agent powered locally by **Ollama**. Users can create, edit, chat with, compact memories of, and chain agents together into collaborative execution pipelines.
 
