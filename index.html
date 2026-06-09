@@ -1,0 +1,2497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏢 Pixel Agent Office — AI Agent Management System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        :root {
+            /* Tokyo Night / Cyberpunk Slate dark mode palette */
+            --bg-color: #0b0c10;
+            --text-color: #f5f5f5;
+            --container-bg: #151821;
+            --border-color: #3f4e6b;
+            --accent-color: #00ffff;
+            --accent-hover: #00cccc;
+            --shadow-color: rgba(0, 0, 0, 0.6);
+            
+            --bubble-user: #1f2d3d;
+            --bubble-agent: #1a3a4a;
+            --bubble-system: #2c2415;
+            
+            --font-pixel: 'Press Start 2P', monospace;
+        }
+
+        body.day-theme {
+            /* Retro Beige / Sunny Office palette */
+            --bg-color: #eae6df;
+            --text-color: #2b2b2b;
+            --container-bg: #f5f1e9;
+            --border-color: #928b7e;
+            --accent-color: #3a6073;
+            --accent-hover: #1e3c4e;
+            --shadow-color: rgba(0, 0, 0, 0.15);
+            
+            --bubble-user: #e3dec3;
+            --bubble-agent: #d4e3e5;
+            --bubble-system: #f2e2cf;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            image-rendering: pixelated;
+        }
+
+        body {
+            font-family: var(--font-pixel);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Retro Double Border System */
+        .pixel-box {
+            background-color: var(--container-bg);
+            border: 4px solid #000;
+            box-shadow: -4px 4px 0 0 #000;
+            position: relative;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+
+        .pixel-btn {
+            font-family: var(--font-pixel);
+            font-size: 12px;
+            padding: 8px 12px;
+            background-color: var(--accent-color);
+            color: #000;
+            border: 4px solid #000;
+            cursor: pointer;
+            position: relative;
+            box-shadow: -4px 4px 0 0 #000;
+            text-transform: uppercase;
+            outline: none;
+            user-select: none;
+        }
+
+        .pixel-btn:active {
+            box-shadow: 0px 0px 0 0 #000;
+            top: 4px;
+            left: -4px;
+        }
+
+        .pixel-btn.disabled, .pixel-btn:disabled {
+            background-color: #555 !important;
+            color: #888 !important;
+            cursor: not-allowed;
+            box-shadow: 0px 0px 0 0 #000;
+            top: 4px;
+            left: -4px;
+        }
+
+        .pixel-input, .pixel-select, .pixel-textarea {
+            font-family: var(--font-pixel);
+            font-size: 10px;
+            padding: 8px;
+            background: #000;
+            color: #00ff66;
+            border: 4px solid var(--border-color);
+            outline: none;
+            width: 100%;
+        }
+
+        .pixel-input:focus, .pixel-select:focus, .pixel-textarea:focus {
+            border-color: var(--accent-color);
+        }
+
+        .pixel-textarea {
+            resize: none;
+            height: 80px;
+            line-height: 1.5;
+        }
+
+        /* Layout */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #000;
+            padding: 10px 20px;
+            border-bottom: 4px solid var(--border-color);
+            z-index: 100;
+        }
+
+        .app-header h1 {
+            font-size: 16px;
+            color: #00ffcc;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .app-header .subtitle {
+            font-size: 10px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .app-main {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        /* Office Canvas & CRT Frame */
+        .office-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 15px;
+            max-width: 680px;
+        }
+
+        .crt-screen {
+            position: relative;
+            border: 8px solid #2b2b2b;
+            border-radius: 6px;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.9), 0 0 15px var(--shadow-color);
+            background: #08090d;
+            overflow: hidden;
+            width: 640px;
+            height: 448px;
+        }
+
+        /* Scanlines Overlay */
+        .crt-screen::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.04));
+            background-size: 100% 4px, 6px 100%;
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0.85;
+        }
+
+        #office-canvas {
+            display: block;
+            background: #08090d;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Console / Dashboard */
+        .dashboard {
+            width: 100%;
+            font-size: 10px;
+            line-height: 1.8;
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dashboard-header {
+            color: #ffd700;
+            border-bottom: 2px solid #000;
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .dashboard-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .dashboard-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .dashboard-ticker {
+            margin-top: 6px;
+            color: #00ff66;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-top: 2px solid #000;
+            padding-top: 6px;
+        }
+
+        .badge {
+            padding: 2px 6px;
+            border: 2px solid #000;
+            font-weight: bold;
+        }
+
+        .badge.online {
+            background-color: #00ff66;
+            color: #000;
+        }
+
+        .badge.offline {
+            background-color: #ff3333;
+            color: #fff;
+        }
+
+        /* Sidebar Guides */
+        .info-sidebar {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-size: 10px;
+            line-height: 1.6;
+        }
+
+        .info-sidebar h2 {
+            font-size: 14px;
+            color: var(--accent-color);
+            border-bottom: 4px solid #000;
+            padding-bottom: 8px;
+        }
+
+        .info-sidebar h3 {
+            font-size: 12px;
+            color: #ffd700;
+            margin-bottom: 4px;
+        }
+
+        .guide-section {
+            border-bottom: 2px dashed var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .guide-section ul {
+            list-style: none;
+            padding-left: 5px;
+        }
+
+        .guide-section li {
+            margin-bottom: 6px;
+            position: relative;
+            padding-left: 10px;
+        }
+
+        .guide-section li::before {
+            content: ">";
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+        }
+
+        .sprite-showcase {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        /* Sliding Chat Panel */
+        .chat-panel {
+            position: fixed;
+            top: 0;
+            right: -420px; /* Slide out of view */
+            width: 400px;
+            height: 100vh;
+            background: var(--container-bg);
+            border-left: 6px solid #000;
+            box-shadow: -8px 0 0 0 #000;
+            transition: right 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-panel.open {
+            right: 0;
+        }
+
+        .chat-header {
+            background-color: #000;
+            padding: 16px;
+            border-bottom: 4px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-header-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .chat-agent-name {
+            font-size: 14px;
+            color: #00ffcc;
+        }
+
+        .chat-agent-role {
+            font-size: 10px;
+            color: #ffd700;
+            background: #2b2b2b;
+            padding: 2px 6px;
+            border: 2px solid #000;
+            width: fit-content;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: #0d0f14;
+        }
+
+        /* Message bubbles */
+        .message-bubble {
+            padding: 10px;
+            border: 4px solid #000;
+            max-width: 85%;
+            font-size: 11px;
+            line-height: 1.6;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .message-bubble.user {
+            align-self: flex-end;
+            background-color: var(--bubble-user);
+            color: #fff;
+            box-shadow: -4px 4px 0 0 #000;
+        }
+
+        .message-bubble.agent {
+            align-self: flex-start;
+            background-color: var(--bubble-agent);
+            color: #00ffcc;
+            box-shadow: 4px 4px 0 0 #000;
+        }
+
+        .message-bubble.system {
+            align-self: center;
+            background-color: var(--bubble-system);
+            color: #ffaa00;
+            border-color: #4a3e29;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 4px 0 0 #000;
+        }
+
+        .message-meta {
+            font-size: 8px;
+            color: #6c7a9c;
+            margin-top: 6px;
+            text-align: right;
+        }
+
+        .chat-input-container {
+            padding: 15px;
+            background: var(--container-bg);
+            border-top: 4px solid #000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-actions-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Thinking Indicators */
+        .thinking-dots {
+            display: inline-block;
+            font-size: 14px;
+            animation: blink 1.2s infinite steps(4);
+            width: 24px;
+        }
+
+        @keyframes blink {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+        }
+
+        /* Context menu */
+        .pixel-menu {
+            display: none;
+            position: absolute;
+            background: #000;
+            border: 4px solid var(--accent-color);
+            box-shadow: -4px 4px 0 0 #000;
+            z-index: 1000;
+            padding: 4px;
+            width: 180px;
+            font-family: var(--font-pixel);
+            font-size: 10px;
+        }
+
+        .menu-item {
+            padding: 8px;
+            cursor: pointer;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .menu-item:hover {
+            background-color: var(--accent-color);
+            color: #000;
+        }
+
+        /* Modals & Overlays */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 998;
+        }
+
+        .pixel-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--container-bg);
+            border: 6px solid #000;
+            box-shadow: -8px 8px 0 0 #000;
+            padding: 20px;
+            z-index: 999;
+            width: 90%;
+            max-width: 460px;
+            font-family: var(--font-pixel);
+            color: var(--text-color);
+        }
+
+        .modal-header {
+            font-size: 14px;
+            color: #ffd700;
+            border-bottom: 4px solid #000;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 10px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .form-row-2 {
+            display: flex;
+            gap: 10px;
+        }
+
+        .form-row-2 .form-group {
+            flex: 1;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        /* Color Palette Selector */
+        .color-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .color-swatch {
+            width: 100%;
+            aspect-ratio: 1;
+            border: 4px solid #000;
+            cursor: pointer;
+        }
+
+        .color-swatch.selected {
+            outline: 2px solid #fff;
+            box-shadow: inset 0 0 0 2px #000;
+        }
+
+        /* Live Form Preview */
+        .preview-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #000;
+            padding: 10px;
+            border: 4px solid var(--border-color);
+            margin-bottom: 12px;
+        }
+
+        #preview-canvas {
+            background: #111;
+            border: 4px solid #000;
+            display: block;
+        }
+
+        /* Chain Popover */
+        .chain-popover {
+            display: none;
+            position: absolute;
+            bottom: 70px;
+            right: 15px;
+            background: #000;
+            border: 4px solid #fff;
+            box-shadow: -4px 4px 0 0 #000;
+            padding: 12px;
+            z-index: 600;
+            width: 220px;
+        }
+
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 12px;
+            background: #000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border: 3px solid #000;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div>
+            <h1>🏢 PIXEL AGENT OFFICE</h1>
+            <div class="subtitle">AI Agent Management System &bull; Powered by Ollama</div>
+        </div>
+        <div class="header-controls">
+            <button class="pixel-btn" id="new-agent-btn">+ NEW AGENT</button>
+            <button class="pixel-btn" id="settings-btn" style="background-color: #8fbcbb;">⚙ SETTINGS</button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="app-main">
+        
+        <!-- Left: Office View & Monitor -->
+        <div class="office-container">
+            <div class="crt-screen">
+                <canvas id="office-canvas" width="640" height="448"></canvas>
+            </div>
+            
+            <!-- System Monitor -->
+            <div class="pixel-box dashboard">
+                <div class="dashboard-header">SYSTEM MONITOR</div>
+                <div class="dashboard-content">
+                    <div class="dashboard-row">
+                        <span>OLLAMA INSTANCE:</span>
+                        <span id="ollama-status-badge" class="badge offline">CHECKING</span>
+                    </div>
+                    <div class="dashboard-row">
+                        <span>OFFICE DESKS OCCUPIED:</span>
+                        <span id="agent-count-badge">0 / 8</span>
+                    </div>
+                    <div class="dashboard-row">
+                        <span>CLOCK (SYSTEM TIME):</span>
+                        <span id="system-time-display">00:00:00</span>
+                    </div>
+                    <div class="dashboard-ticker" id="ticker-message">
+                        SYSTEM READY. Left-click an agent to chat, right-click for actions.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right: Default Guides & Live Supervisor Showcase -->
+        <div class="info-sidebar pixel-box">
+            <h2>OFFICE DIRECTORY</h2>
+            
+            <div class="guide-section">
+                <h3>CONTROLS</h3>
+                <ul>
+                    <li><strong>LEFT CLICK:</strong> Chat with agent</li>
+                    <li><strong>RIGHT CLICK:</strong> Context actions (Edit, Fire/Delete, Compact)</li>
+                    <li><strong>DESK SLOTS:</strong> Scaled dynamically (4, 8, 16)</li>
+                </ul>
+            </div>
+
+            <div class="guide-section">
+                <h3>OLLAMA BACKEND</h3>
+                <p>Ensure Ollama is running locally (default: http://localhost:11434). If offline, default models are provided for demo.</p>
+            </div>
+
+            <div class="guide-section">
+                <h3>AUTO-COMPACT</h3>
+                <p>Automatically bundles history when messages exceed the threshold, feeding a generated summary back to keep memory fresh.</p>
+            </div>
+
+            <div style="text-align: center; margin-top: auto;">
+                <div class="sprite-showcase">
+                    <canvas id="showcase-canvas" width="64" height="64" style="background:#000; border:4px solid #000;"></canvas>
+                </div>
+                <div style="font-size: 10px; margin-top: 6px; color: #ffd700;">SUPERVISOR BOT</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Chat Panel (Slides In) -->
+    <div class="chat-panel" id="chat-panel">
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <div class="chat-agent-name" id="chat-agent-name">Agent Name</div>
+                <div class="chat-agent-role" id="chat-agent-role">Role Badge</div>
+            </div>
+            <button class="pixel-btn" id="close-chat-btn" style="background-color: #bf616a; padding: 4px 8px;">X</button>
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+            <!-- Messages go here -->
+        </div>
+
+        <div class="chat-input-container">
+            <!-- Output Chaining Popover -->
+            <div class="chain-popover" id="chain-popover">
+                <div style="font-size: 10px; margin-bottom: 8px; color: #fff;">SELECT TARGET AGENT:</div>
+                <select id="chain-agent-select" class="pixel-select" style="margin-bottom: 8px;"></select>
+                <div style="display: flex; gap: 8px;">
+                    <button id="chain-submit-btn" class="pixel-btn" style="padding: 4px; font-size: 10px; flex:1;">CHAIN</button>
+                    <button id="chain-cancel-btn" class="pixel-btn" style="padding: 4px; font-size: 10px; background-color: #bf616a; flex:1;">CANCEL</button>
+                </div>
+            </div>
+
+            <div class="chat-input-row">
+                <input type="text" id="chat-input-textarea" class="pixel-input" placeholder="Type a message..." autocomplete="off">
+                <button class="pixel-btn" id="chat-send-btn" style="padding: 8px 16px;">SEND</button>
+            </div>
+            <div class="chat-actions-row">
+                <div style="display: flex; gap: 6px;">
+                    <button class="pixel-btn" id="chat-compact-btn" title="Manual Compact Memory" style="background-color: #ebcb8b; padding: 4px 8px; font-size: 11px;">🗜 COMPACT</button>
+                    <button class="pixel-btn" id="chat-chain-btn" title="Chain Last Response" style="background-color: #a3be8c; padding: 4px 8px; font-size: 11px;">&rarr; CHAIN</button>
+                </div>
+                <button class="pixel-btn" id="chat-clear-btn" style="background-color: #bf616a; padding: 4px 6px; font-size: 9px;">CLEAR LOG</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Context Menu -->
+    <div id="context-menu" class="pixel-menu">
+        <div class="menu-item" id="menu-chat">CHAT WITH AGENT</div>
+        <div class="menu-item" id="menu-edit">EDIT AGENT</div>
+        <div class="menu-item" id="menu-compact">COMPACT MEMORY</div>
+        <div class="menu-item" id="menu-delete" style="color: #ff5555; border-top: 2px dashed #ff5555; margin-top: 4px;">FIRE / DELETE</div>
+    </div>
+
+    <!-- Modals Overlay -->
+    <div class="modal-overlay" id="modal-overlay"></div>
+
+    <!-- Create/Edit Agent Modal -->
+    <div class="pixel-modal" id="agent-modal">
+        <div class="modal-header" id="agent-modal-title">CREATE NEW AGENT</div>
+        
+        <!-- Live Preview -->
+        <div class="preview-container">
+            <canvas id="preview-canvas" width="64" height="64"></canvas>
+            <div>
+                <div style="font-size: 10px; color: #ffd700; margin-bottom: 4px;">SPRITE PREVIEW</div>
+                <div style="font-size: 8px; color: #888;">Updates dynamically. Bobbing is simulated live.</div>
+            </div>
+        </div>
+
+        <form id="agent-form" onsubmit="event.preventDefault();">
+            <input type="hidden" id="agent-id">
+            
+            <div class="form-group">
+                <label for="agent-name">AGENT NAME</label>
+                <input type="text" id="agent-name" class="pixel-input" placeholder="e.g. ResearcherBot" required>
+            </div>
+
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label for="agent-role-select">ROLE PRESET</label>
+                    <select id="agent-role-select" class="pixel-select">
+                        <option value="Deep Researcher">Deep Researcher</option>
+                        <option value="Code Reviewer">Code Reviewer</option>
+                        <option value="Data Analyst">Data Analyst</option>
+                        <option value="Thai Academic Writer">Thai Academic Writer</option>
+                        <option value="General Assistant">General Assistant</option>
+                        <option value="Custom">Custom Prompt</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="agent-model-select">OLLAMA MODEL</label>
+                    <select id="agent-model-select" class="pixel-select">
+                        <!-- Populated dynamically -->
+                    </select>
+                    <input type="text" id="agent-model-custom" class="pixel-input" placeholder="Enter model name..." style="display:none; margin-top:4px;">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="agent-system-prompt">SYSTEM PROMPT (ROLE BEHAVIOR)</label>
+                <textarea id="agent-system-prompt" class="pixel-textarea"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>AVATAR SHIRT COLOR</label>
+                <input type="hidden" id="agent-avatar-color" value="#44aaff">
+                <div class="color-picker-grid" id="color-picker-grid">
+                    <!-- Retro colors populated in JS -->
+                </div>
+            </div>
+
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label for="agent-compact-count">COMPACT AT MSG COUNT</label>
+                    <input type="number" id="agent-compact-count" class="pixel-input" min="5" max="100" value="20">
+                </div>
+
+                <div class="form-group">
+                    <label for="agent-chain-target">CHAIN ROUTE TARGET</label>
+                    <select id="agent-chain-target" class="pixel-select">
+                        <option value="">None (Stop)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
+                <input type="checkbox" id="agent-compact-session" style="transform:scale(1.2); margin-right: 4px;" checked>
+                <label for="agent-compact-session" style="display:inline; font-size:9px;">Auto-Compact on Session End</label>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="pixel-btn" id="agent-modal-cancel" style="background-color: #bf616a;">CANCEL</button>
+                <button type="submit" class="pixel-btn" id="agent-modal-submit">HIRE / SAVE</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="pixel-modal" id="settings-modal">
+        <div class="modal-header">GLOBAL OFFICE SETTINGS</div>
+        
+        <div class="form-group">
+            <label for="setting-ollama-url">OLLAMA BASE URL</label>
+            <input type="url" id="setting-ollama-url" class="pixel-input" placeholder="http://localhost:11434" required>
+        </div>
+
+        <div class="form-row-2">
+            <div class="form-group">
+                <label for="setting-desk-slots">OFFICE LAYOUT (DESKS)</label>
+                <select id="setting-desk-slots" class="pixel-select">
+                    <option value="4">4 Desk Slots</option>
+                    <option value="8" selected>8 Desk Slots</option>
+                    <option value="16">16 Desk Slots</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="setting-theme">THEME LIGHTING</label>
+                <select id="setting-theme" class="pixel-select">
+                    <option value="night">Night Shift (Dark)</option>
+                    <option value="day">Day Shift (Light)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group" style="display: flex; gap: 8px; align-items: center; margin-top: 10px; margin-bottom: 15px;">
+            <input type="checkbox" id="setting-auto-chain" style="transform:scale(1.2); margin-right:4px;">
+            <label for="setting-auto-chain" style="display:inline; font-size:10px;">Enable Auto-Chain Exec Mode</label>
+        </div>
+
+        <div style="border-top: 4px solid #000; padding-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+            <button class="pixel-btn" id="settings-export-btn" style="background-color: #ebcb8b; width: 100%;">EXPORT ALL AGENTS (ZIP)</button>
+            <button class="pixel-btn" id="settings-session-end-btn" style="background-color: #bf616a; width: 100%;">END SESSION (COMPACT & SAVE)</button>
+        </div>
+
+        <div class="form-actions" style="margin-top: 15px;">
+            <button class="pixel-btn" id="settings-modal-close" style="width: 100%;">CLOSE</button>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="pixel-modal" id="confirm-modal" style="max-width: 350px;">
+        <div class="modal-header">FIRE AGENT?</div>
+        <p style="font-size: 10px; line-height: 1.6; margin-bottom: 20px;" id="confirm-modal-text">
+            Are you sure you want to terminate this agent's contract? Their memory and files will be permanently deleted!
+        </p>
+        <div class="form-actions" style="justify-content: space-between;">
+            <button class="pixel-btn" id="confirm-cancel-btn" style="background-color: #a3be8c;">KEEP AGENT</button>
+            <button class="pixel-btn" id="confirm-submit-btn" style="background-color: #bf616a;">FIRE THEM</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // --- CONSTANTS & CONFIGURATION ---
+        const TILE_SIZE = 32;
+        const COLS = 20;
+        const ROWS = 14;
+
+        // Symmetric Desk Grid coordinates
+        // Row 1: slots 0-3 (y=4, agent at y=3)
+        // Row 2: slots 4-7 (y=7, agent at y=6)
+        // Row 3: slots 8-11 (y=10, agent at y=9)
+        // Row 4: slots 12-15 (y=13, agent at y=12)
+        const DESK_SLOTS = [
+            { x: 3, y: 4 },  { x: 7, y: 4 },  { x: 11, y: 4 },  { x: 15, y: 4 },
+            { x: 3, y: 7 },  { x: 7, y: 7 },  { x: 11, y: 7 },  { x: 15, y: 7 },
+            { x: 3, y: 10 }, { x: 7, y: 10 }, { x: 11, y: 10 }, { x: 15, y: 10 },
+            { x: 3, y: 13 }, { x: 7, y: 13 }, { x: 11, y: 13 }, { x: 15, y: 13 }
+        ];
+
+        const ROLE_PRESETS = {
+            "Deep Researcher": "You are an expert deep researcher. When given a topic, you conduct thorough, multi-angle research, cite evidence, identify knowledge gaps, and synthesize findings into structured reports with clear sections.",
+            "Code Reviewer": "You are a senior software engineer specializing in code review. You identify bugs, security issues, performance problems, and style violations. You always explain *why* something is an issue and suggest concrete improvements.",
+            "Data Analyst": "You are an expert data analyst. You interpret data, identify trends, suggest visualizations, and provide statistical reasoning. You are precise with numbers and always question data quality.",
+            "Thai Academic Writer": "คุณเป็นนักเขียนวิชาการภาษาไทยผู้เชี่ยวชาญ เชี่ยวชาญด้าน AI และ Deep Learning คุณเขียนด้วยภาษาที่เป็นทางการ ถูกต้องตามหลักวิชาการไทย และตรงตามมาตรฐานวารสาร Scopus/ISI",
+            "General Assistant": "You are a helpful, concise, and thoughtful assistant. You answer clearly and adapt your tone to the user's needs.",
+            "Custom": ""
+        };
+
+        const RETRO_COLORS = [
+            "#44aaff", "#00ff66", "#ffd700", "#ff5500", 
+            "#ff33cc", "#9900ff", "#00ffff", "#e5e9f0"
+        ];
+
+        const PALETTE = {
+            day: {
+                floor: '#e5e9f0',
+                floorGrit: '#d8dee9',
+                wall: '#88c0d0',
+                wallBricks: '#81a1c1',
+                wallBottom: '#4c566a',
+                rug: '#a3be8c',
+                rugBorder: '#8fbcbb',
+            },
+            night: {
+                floor: '#1a1b26',
+                floorGrit: '#24283b',
+                wall: '#414868',
+                wallBricks: '#565f89',
+                wallBottom: '#24283b',
+                rug: '#7aa2f7',
+                rugBorder: '#3d59a1',
+            }
+        };
+
+        // --- STATE MANAGEMENT ---
+        let agents = [];
+        let activeAgent = null;
+        let selectedAgentForMenu = null;
+        let frameCount = 0;
+        let hoveredTile = null;
+        let theme = 'night';
+        let currentPalette = PALETTE.night;
+
+        // Modal triggers & UI
+        const canvas = document.getElementById('office-canvas');
+        const ctx = canvas.getContext('2d');
+        const showcaseCanvas = document.getElementById('showcase-canvas');
+        const sctx = showcaseCanvas.getContext('2d');
+        const previewCanvas = document.getElementById('preview-canvas');
+        const pctx = previewCanvas.getContext('2d');
+
+        // --- CORE APPLICATION INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', async () => {
+            loadGlobalSettings();
+            await fetchAgents();
+            await checkOllamaStatus();
+            await populateModelDropdown();
+            setupEventListeners();
+            
+            // Start main game loop
+            requestAnimationFrame(gameLoop);
+            
+            // Periodic Ollama online check (every 10s)
+            setInterval(checkOllamaStatus, 10000);
+            
+            // Set clock
+            setInterval(updateClock, 1000);
+            
+            // Build color selectors
+            buildColorSwatches();
+            
+            // Sync initial layouts
+            updateDashboard();
+        });
+
+        // Warn/Compact on page close if enabled
+        window.addEventListener('beforeunload', (e) => {
+            const hasUnsavedContext = agents.some(a => a.memory.length > 4 && a.auto_compact?.on_session_end);
+            if (hasUnsavedContext) {
+                // Trigger quick session-end compact calls (best-effort)
+                endSessionCompacts(true);
+            }
+        });
+
+        // --- STORAGE & SETTINGS ---
+        function loadGlobalSettings() {
+            // Ollama Base
+            if (!localStorage.getItem('ollama_url')) {
+                localStorage.setItem('ollama_url', 'http://localhost:11434');
+            }
+            document.getElementById('setting-ollama-url').value = localStorage.getItem('ollama_url');
+            
+            // Desk layout
+            if (!localStorage.getItem('desk_slots')) {
+                localStorage.setItem('desk_slots', '8');
+            }
+            document.getElementById('setting-desk-slots').value = localStorage.getItem('desk_slots');
+
+            // Theme
+            if (!localStorage.getItem('theme')) {
+                localStorage.setItem('theme', 'night');
+            }
+            theme = localStorage.getItem('theme');
+            document.getElementById('setting-theme').value = theme;
+            applyTheme(theme);
+
+            // Auto Chain
+            const autoChain = localStorage.getItem('auto_chain') === 'true';
+            document.getElementById('setting-auto-chain').checked = autoChain;
+        }
+
+        function saveGlobalSettings() {
+            const ollamaUrl = document.getElementById('setting-ollama-url').value.trim();
+            const deskSlots = document.getElementById('setting-desk-slots').value;
+            const chosenTheme = document.getElementById('setting-theme').value;
+            const autoChain = document.getElementById('setting-auto-chain').checked;
+
+            localStorage.setItem('ollama_url', ollamaUrl);
+            localStorage.setItem('desk_slots', deskSlots);
+            localStorage.setItem('theme', chosenTheme);
+            localStorage.setItem('auto_chain', autoChain);
+
+            theme = chosenTheme;
+            applyTheme(chosenTheme);
+            updateDashboard();
+            populateAgentChainDropdowns(); // update options mapping if counts/slots change
+            
+            addTickerMessage("Global settings saved successfully.");
+        }
+
+        function applyTheme(t) {
+            currentPalette = PALETTE[t];
+            if (t === 'day') {
+                document.body.classList.add('day-theme');
+            } else {
+                document.body.classList.remove('day-theme');
+            }
+        }
+
+        function getOllamaBaseUrl() {
+            return localStorage.getItem('ollama_url') || 'http://localhost:11434';
+        }
+
+        function getActiveDeskSlots() {
+            return parseInt(localStorage.getItem('desk_slots') || '8');
+        }
+
+        // --- API INTEGRATION ---
+        async function fetchAgents() {
+            try {
+                const res = await fetch('/agents');
+                if (res.ok) {
+                    agents = await res.ok ? await res.json() : [];
+                    // Ensure activeAgent reference is updated
+                    if (activeAgent) {
+                        activeAgent = agents.find(a => a.id === activeAgent.id) || null;
+                    }
+                    populateAgentChainDropdowns();
+                }
+            } catch (e) {
+                console.error("Failed to load agents", e);
+                addTickerMessage("Error: Could not load agents from Python server.");
+            }
+        }
+
+        async function saveAgent(agent) {
+            try {
+                const res = await fetch(`/agents/${agent.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(agent)
+                });
+                if (res.ok) {
+                    const saved = await res.json();
+                    const idx = agents.findIndex(a => a.id === saved.id);
+                    if (idx !== -1) {
+                        agents[idx] = saved;
+                    } else {
+                        agents.push(saved);
+                    }
+                    if (activeAgent && activeAgent.id === saved.id) {
+                        activeAgent = saved;
+                    }
+                    populateAgentChainDropdowns();
+                }
+            } catch (e) {
+                console.error("Failed to save agent", e);
+                addTickerMessage("Error saving agent files.");
+            }
+        }
+
+        async function createAgent(agent) {
+            try {
+                const res = await fetch('/agents', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(agent)
+                });
+                if (res.ok) {
+                    const created = await res.json();
+                    agents.push(created);
+                    populateAgentChainDropdowns();
+                    addTickerMessage(`Hired ${created.name} successfully!`);
+                }
+            } catch (e) {
+                console.error("Failed to create agent", e);
+                addTickerMessage("Error hiring new agent.");
+            }
+        }
+
+        async function deleteAgent(agentId) {
+            try {
+                const res = await fetch(`/agents/${agentId}`, {
+                    method: 'DELETE'
+                });
+                if (res.ok) {
+                    agents = agents.filter(a => a.id !== agentId);
+                    if (activeAgent && activeAgent.id === agentId) {
+                        closeChat();
+                    }
+                    populateAgentChainDropdowns();
+                    updateDashboard();
+                    addTickerMessage("Agent contract terminated.");
+                }
+            } catch (e) {
+                console.error("Failed to delete agent", e);
+                addTickerMessage("Error firing agent.");
+            }
+        }
+
+        async function checkOllamaStatus() {
+            const badge = document.getElementById('ollama-status-badge');
+            const ollamaUrl = getOllamaBaseUrl();
+            
+            try {
+                const res = await fetch(`/ollama/models?url=${encodeURIComponent(ollamaUrl)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.fallback) {
+                        badge.textContent = "OFFLINE (FALLBACK)";
+                        badge.className = "badge offline";
+                        return false;
+                    } else {
+                        badge.textContent = "ONLINE";
+                        badge.className = "badge online";
+                        return true;
+                    }
+                }
+            } catch (e) {
+                badge.textContent = "OFFLINE";
+                badge.className = "badge offline";
+                return false;
+            }
+            return false;
+        }
+
+        async function populateModelDropdown() {
+            const dropdown = document.getElementById('agent-model-select');
+            dropdown.innerHTML = '';
+            
+            const ollamaUrl = getOllamaBaseUrl();
+            try {
+                const res = await fetch(`/ollama/models?url=${encodeURIComponent(ollamaUrl)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.models && data.models.length > 0) {
+                        data.models.forEach(m => {
+                            const opt = document.createElement('option');
+                            opt.value = m.name;
+                            opt.textContent = m.name;
+                            dropdown.appendChild(opt);
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error("Could not fetch models", e);
+            }
+            
+            // Add custom manual model input option
+            const optCustom = document.createElement('option');
+            optCustom.value = "CUSTOM_INPUT";
+            optCustom.textContent = "[TYPE CUSTOM MODEL...]";
+            dropdown.appendChild(optCustom);
+        }
+
+        // --- DRAWING / GRAPHICS ENGINE ---
+        function gameLoop() {
+            frameCount++;
+            drawOffice();
+            drawShowcase();
+            drawFormPreview();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function drawOffice() {
+            // Draw floor/walls base
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const x = c * TILE_SIZE;
+                    const y = r * TILE_SIZE;
+                    
+                    const isWindowCol = (c === 3 || c === 8 || c === 12 || c === 16);
+                    
+                    if (r === 0) {
+                        if (isWindowCol) {
+                            drawWindow(ctx, x, y, r, c, theme);
+                        } else {
+                            drawWallTop(ctx, x, y, c);
+                        }
+                    } else if (r === 1) {
+                        if (isWindowCol) {
+                            drawWindow(ctx, x, y, r, c, theme);
+                        } else {
+                            drawWallFace(ctx, x, y, c);
+                        }
+                    } else {
+                        drawFloor(ctx, x, y, frameCount, c, r);
+                    }
+                }
+            }
+
+            // Draw decorative Rugs
+            drawRug(ctx, 2 * TILE_SIZE, 3 * TILE_SIZE, 3 * TILE_SIZE, 10 * TILE_SIZE);
+            drawRug(ctx, 6 * TILE_SIZE, 3 * TILE_SIZE, 8 * TILE_SIZE, 10 * TILE_SIZE);
+            drawRug(ctx, 15 * TILE_SIZE, 3 * TILE_SIZE, 3 * TILE_SIZE, 10 * TILE_SIZE);
+
+            // Draw Bookshelves on the left
+            drawBookshelf(ctx, 0, 3 * TILE_SIZE);
+            drawBookshelf(ctx, 0, 7 * TILE_SIZE);
+            drawBookshelf(ctx, 0, 11 * TILE_SIZE);
+
+            // Draw Plants in the corners/borders
+            drawPlant(ctx, 1 * TILE_SIZE, 2 * TILE_SIZE, frameCount);
+            drawPlant(ctx, 18 * TILE_SIZE, 2 * TILE_SIZE, frameCount);
+            drawPlant(ctx, 1 * TILE_SIZE, 12 * TILE_SIZE, frameCount);
+            drawPlant(ctx, 18 * TILE_SIZE, 12 * TILE_SIZE, frameCount);
+
+            // Draw Water Cooler
+            drawWaterCooler(ctx, 19 * TILE_SIZE, 5 * TILE_SIZE, frameCount);
+            drawWaterCooler(ctx, 19 * TILE_SIZE, 9 * TILE_SIZE, frameCount);
+
+            // Draw Wall Clock
+            drawClock(ctx, 10 * TILE_SIZE, 0);
+
+            // Draw active slots (desks + chairs + monitors + agents)
+            const activeSlots = getActiveDeskSlots();
+            for (let i = 0; i < activeSlots; i++) {
+                drawDeskSlot(ctx, i, frameCount);
+            }
+
+            // Draw hover frame
+            if (hoveredTile && hoveredTile.x >= 0 && hoveredTile.x < COLS && hoveredTile.y >= 0 && hoveredTile.y < ROWS) {
+                ctx.strokeStyle = theme === 'day' ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.25)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(hoveredTile.x * TILE_SIZE, hoveredTile.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+        }
+
+        // Draw individual floor tile
+        function drawFloor(cContext, x, y, fCount, c, r) {
+            cContext.fillStyle = currentPalette.floor;
+            cContext.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+            
+            // Deterministic floor crack details
+            cContext.fillStyle = currentPalette.floorGrit;
+            const hash = (c * 17 + r * 31) % 100;
+            if (hash < 12) {
+                cContext.fillRect(x + 8, y + 8, 2, 2);
+                cContext.fillRect(x + 20, y + 18, 2, 2);
+            } else if (hash < 15) {
+                cContext.fillRect(x + 4, y + 12, 4, 1);
+                cContext.fillRect(x + 8, y + 13, 2, 1);
+            }
+        }
+
+        // Wall top border
+        function drawWallTop(cContext, x, y, c) {
+            cContext.fillStyle = currentPalette.wallBottom;
+            cContext.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+            
+            cContext.fillStyle = currentPalette.wallBricks;
+            cContext.fillRect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+            
+            cContext.fillStyle = currentPalette.wallBottom;
+            if (c % 2 === 0) {
+                cContext.fillRect(x, y, 2, TILE_SIZE);
+            } else {
+                cContext.fillRect(x + TILE_SIZE / 2, y, 2, TILE_SIZE);
+            }
+            cContext.fillRect(x, y + TILE_SIZE / 2, TILE_SIZE, 2);
+        }
+
+        // Wall paneling details
+        function drawWallFace(cContext, x, y, c) {
+            cContext.fillStyle = currentPalette.wallBottom;
+            cContext.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+            
+            cContext.fillStyle = theme === 'day' ? '#695c52' : '#1b202a';
+            if (c % 2 === 0) {
+                cContext.fillRect(x + 6, y, 4, TILE_SIZE);
+                cContext.fillRect(x + 22, y, 4, TILE_SIZE);
+            }
+            
+            cContext.fillStyle = 'rgba(0, 0, 0, 0.35)';
+            cContext.fillRect(x, y + TILE_SIZE - 4, TILE_SIZE, 4);
+        }
+
+        // Window with sky view changing depending on theme
+        function drawWindow(cContext, x, y, r, c, currentTheme) {
+            if (r === 0) {
+                if (currentTheme === 'day') {
+                    cContext.fillStyle = '#87ceeb';
+                    cContext.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+                    cContext.fillStyle = '#ffffff';
+                    cContext.fillRect(x + 8, y + 16, 16, 8);
+                    cContext.fillRect(x + 12, y + 12, 10, 4);
+                } else {
+                    cContext.fillStyle = '#0a0b10';
+                    cContext.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+                    cContext.fillStyle = '#ffffff';
+                    cContext.fillRect(x + 6, y + 6, 2, 2);
+                    cContext.fillRect(x + 22, y + 18, 1, 1);
+                    cContext.fillRect(x + 14, y + 10, 2, 2);
+                }
+                cContext.strokeStyle = '#333333';
+                cContext.lineWidth = 2;
+                cContext.strokeRect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 2);
+            } else if (r === 1) {
+                cContext.fillStyle = currentPalette.wallBottom;
+                cContext.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+                
+                if (currentTheme === 'day') {
+                    cContext.fillStyle = '#87ceeb';
+                } else {
+                    cContext.fillStyle = '#0a0b10';
+                }
+                cContext.fillRect(x + 2, y, TILE_SIZE - 4, 12);
+                
+                cContext.strokeStyle = '#333333';
+                cContext.lineWidth = 2;
+                cContext.strokeRect(x + 2, y - 2, TILE_SIZE - 4, 14);
+                
+                cContext.fillStyle = '#8b5a2b';
+                cContext.fillRect(x, y + 12, TILE_SIZE, 4);
+                cContext.fillStyle = 'rgba(0, 0, 0, 0.4)';
+                cContext.fillRect(x, y + 16, TILE_SIZE, 4);
+            }
+        }
+
+        // Ticking Clock
+        function drawClock(cContext, x, y) {
+            cContext.fillStyle = '#ffffff';
+            cContext.strokeStyle = '#000000';
+            cContext.lineWidth = 2;
+            cContext.beginPath();
+            cContext.arc(x + 16, y + 16, 10, 0, Math.PI * 2);
+            cContext.fill();
+            cContext.stroke();
+            
+            const date = new Date();
+            const hrs = date.getHours();
+            const mins = date.getMinutes();
+            const secs = date.getSeconds();
+            
+            cContext.fillStyle = '#000000';
+            cContext.fillRect(x + 15, y + 15, 2, 2);
+            
+            const hrAngle = (hrs % 12 + mins / 60) * 30 * Math.PI / 180;
+            cContext.strokeStyle = '#000000';
+            cContext.lineWidth = 2;
+            cContext.beginPath();
+            cContext.moveTo(x + 16, y + 16);
+            cContext.lineTo(x + 16 + Math.sin(hrAngle) * 5, y + 16 - Math.cos(hrAngle) * 5);
+            cContext.stroke();
+            
+            const minAngle = (mins + secs / 60) * 6 * Math.PI / 180;
+            cContext.strokeStyle = '#000000';
+            cContext.lineWidth = 1;
+            cContext.beginPath();
+            cContext.moveTo(x + 16, y + 16);
+            cContext.lineTo(x + 16 + Math.sin(minAngle) * 7, y + 16 - Math.cos(minAngle) * 7);
+            cContext.stroke();
+            
+            const secAngle = secs * 6 * Math.PI / 180;
+            cContext.strokeStyle = '#ff0000';
+            cContext.lineWidth = 1;
+            cContext.beginPath();
+            cContext.moveTo(x + 16, y + 16);
+            cContext.lineTo(x + 16 + Math.sin(secAngle) * 8, y + 16 - Math.cos(secAngle) * 8);
+            cContext.stroke();
+        }
+
+        // Rug layout block
+        function drawRug(cContext, x, y, w, h) {
+            cContext.fillStyle = currentPalette.rug;
+            cContext.fillRect(x, y, w, h);
+            
+            cContext.strokeStyle = currentPalette.rugBorder;
+            cContext.lineWidth = 4;
+            cContext.strokeRect(x + 2, y + 2, w - 4, h - 4);
+            
+            cContext.fillStyle = currentPalette.rugBorder;
+            for (let i = y + 4; i < y + h - 4; i += 8) {
+                cContext.fillRect(x, i, 2, 4);
+                cContext.fillRect(x + w - 2, i, 2, 4);
+            }
+        }
+
+        // Bookshelf decoration
+        function drawBookshelf(cContext, x, y) {
+            cContext.fillStyle = '#4e3629';
+            cContext.fillRect(x + 2, y, 28, 32);
+            cContext.fillStyle = '#2f1f17';
+            cContext.fillRect(x + 4, y + 2, 24, 28);
+            
+            cContext.fillStyle = '#4e3629';
+            cContext.fillRect(x + 4, y + 10, 24, 2);
+            cContext.fillRect(x + 4, y + 20, 24, 2);
+            
+            cContext.fillStyle = '#ff3333'; cContext.fillRect(x + 6, y + 3, 3, 7);
+            cContext.fillStyle = '#3333ff'; cContext.fillRect(x + 9, y + 4, 4, 6);
+            cContext.fillStyle = '#ffd700'; cContext.fillRect(x + 14, y + 3, 3, 7);
+            cContext.fillStyle = '#33cc33'; cContext.fillRect(x + 17, y + 5, 3, 5);
+            
+            cContext.fillStyle = '#00ffff'; cContext.fillRect(x + 8, y + 13, 3, 7);
+            cContext.fillStyle = '#ff9900'; cContext.fillRect(x + 12, y + 12, 4, 8);
+            cContext.fillStyle = '#ffffff'; cContext.fillRect(x + 17, y + 14, 3, 6);
+            
+            cContext.fillStyle = '#ffd700'; cContext.fillRect(x + 7, y + 23, 4, 7);
+            cContext.fillStyle = '#ff3333'; cContext.fillRect(x + 12, y + 22, 3, 8);
+        }
+
+        // Potted plants with swaying animation
+        function drawPlant(cContext, x, y, fCount) {
+            cContext.fillStyle = '#bf6a3d';
+            cContext.fillRect(x + 10, y + 20, 12, 12);
+            cContext.fillStyle = '#8a4824';
+            cContext.fillRect(x + 10, y + 20, 3, 12);
+            
+            const sway = Math.sin(fCount * 0.05 + x) * 1.5;
+            cContext.fillStyle = '#2d7d3c';
+            cContext.fillRect(x + 6 + sway, y + 6, 20, 14);
+            cContext.fillStyle = '#4bae4f';
+            cContext.fillRect(x + 10 + sway, y + 2, 12, 10);
+            
+            cContext.fillStyle = '#4e3629';
+            cContext.fillRect(x + 11, y + 18, 10, 2);
+        }
+
+        // Water cooler with drip and bubble animation
+        function drawWaterCooler(cContext, x, y, fCount) {
+            cContext.fillStyle = '#dddddd';
+            cContext.fillRect(x + 8, y + 16, 16, 16);
+            cContext.fillStyle = '#aaaaaa';
+            cContext.fillRect(x + 8, y + 16, 3, 16);
+            
+            cContext.fillStyle = '#4ba3e3';
+            cContext.fillRect(x + 9, y + 2, 14, 14);
+            cContext.fillStyle = '#77c3ec';
+            cContext.fillRect(x + 9, y + 2, 4, 14);
+            
+            cContext.fillStyle = '#2b6cb0';
+            cContext.fillRect(x + 12, y, 8, 2);
+            
+            if (fCount % 160 < 20) {
+                cContext.fillStyle = '#ffffff';
+                cContext.fillRect(x + 15, y + 12 - (fCount % 160) * 0.4, 2, 2);
+            }
+            
+            cContext.fillStyle = '#718096';
+            cContext.fillRect(x + 14, y + 18, 4, 2);
+            
+            const dripOffset = (fCount % 80) * 0.25;
+            cContext.fillStyle = '#77c3ec';
+            cContext.fillRect(x + 16, y + 20 + dripOffset, 1, 1);
+        }
+
+        // Complete Desk Slot rendering
+        function drawDeskSlot(cContext, slotIdx, fCount) {
+            const slot = DESK_SLOTS[slotIdx];
+            if (!slot) return;
+            
+            const x = slot.x * TILE_SIZE;
+            const y = slot.y * TILE_SIZE;
+            
+            const agent = agents.find(a => a.slot === slotIdx);
+            
+            // 1. Draw Chair backing
+            cContext.fillStyle = '#4a2c11';
+            cContext.fillRect(x + 6, y - 26, 20, 16);
+            cContext.fillStyle = '#221105';
+            cContext.fillRect(x + 8, y - 26, 3, 16);
+
+            // 2. Draw Agent if sitting
+            if (agent) {
+                drawAgentSprite(cContext, x, y - TILE_SIZE, agent, fCount);
+            }
+            
+            // 3. Draw Desk wood frame
+            cContext.fillStyle = '#5c3a21';
+            cContext.fillRect(x, y + 4, 32, 16);
+            cContext.fillStyle = '#784c2b';
+            cContext.fillRect(x, y + 4, 32, 2);
+
+            cContext.fillStyle = '#3d2514';
+            cContext.fillRect(x, y + 20, 6, 12);
+            cContext.fillRect(x + 26, y + 20, 6, 12);
+
+            // Keyboard
+            cContext.fillStyle = '#cccccc';
+            cContext.fillRect(x + 8, y + 14, 16, 3);
+            cContext.fillStyle = '#666666';
+            cContext.fillRect(x + 10, y + 15, 2, 1);
+            cContext.fillRect(x + 15, y + 15, 2, 1);
+
+            // Monitor base
+            cContext.fillStyle = '#777788';
+            cContext.fillRect(x + 12, y + 4, 8, 2);
+            cContext.fillRect(x + 14, y + 1, 4, 3);
+            
+            // Screen casing
+            cContext.fillStyle = '#555566';
+            cContext.fillRect(x + 6, y - 9, 20, 10);
+            
+            // Screen display
+            if (agent) {
+                if (agent.thinking) {
+                    const flash = Math.floor(fCount / 4) % 2 === 0;
+                    cContext.fillStyle = flash ? '#00ffff' : '#00aaff';
+                } else {
+                    cContext.fillStyle = '#112211';
+                }
+            } else {
+                cContext.fillStyle = '#151515';
+            }
+            cContext.fillRect(x + 8, y - 7, 16, 6);
+            
+            // Monitor flashing cursor
+            if (agent && !agent.thinking && (Math.floor(fCount / 30) % 2 === 0)) {
+                cContext.fillStyle = '#00ff66';
+                cContext.fillRect(x + 9, y - 6, 2, 3);
+            }
+            
+            cContext.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            cContext.fillRect(x + 8, y - 7, 6, 6);
+        }
+
+        // Draw character sprite
+        function drawAgentSprite(cContext, x, y, agent, fCount) {
+            let bob = 0;
+            const isThinking = agent.thinking;
+            
+            if (isThinking) {
+                bob = Math.floor(Math.sin(fCount * 0.4) * 2);
+            } else {
+                bob = Math.floor(Math.sin(fCount * 0.08) * 1.2);
+            }
+
+            const shirtColor = agent.avatar_color || '#44aaff';
+            const skinColor = '#ffdbac';
+            const hairColor = getHairByRole(agent.role);
+            
+            // Shirt / Body
+            cContext.fillStyle = shirtColor;
+            cContext.fillRect(x + 6, y + 14 + bob, 20, 20);
+            
+            // Skin (Head)
+            cContext.fillStyle = skinColor;
+            cContext.fillRect(x + 8, y + 4 + bob, 16, 10);
+            
+            // Face (Eyes)
+            cContext.fillStyle = '#000000';
+            cContext.fillRect(x + 11, y + 8 + bob, 2, 2);
+            cContext.fillRect(x + 19, y + 8 + bob, 2, 2);
+            
+            // Hair drawing
+            drawHair(cContext, x, y + 4, bob, agent.role, hairColor);
+            
+            // Custom accessories
+            drawRoleIcon(cContext, x, y + 4, bob, agent.role);
+
+            // Thinking animations
+            if (isThinking) {
+                cContext.fillStyle = skinColor;
+                const leftHandOffset = Math.sin(fCount * 0.6) > 0 ? 2 : 0;
+                const rightHandOffset = Math.sin(fCount * 0.6) < 0 ? 2 : 0;
+                cContext.fillRect(x + 8, y + 20 + leftHandOffset, 4, 4);
+                cContext.fillRect(x + 20, y + 20 + rightHandOffset, 4, 4);
+                
+                // Floating thought bubble
+                const bubbleFrame = Math.floor(fCount / 10) % 4;
+                cContext.fillStyle = '#ffffff';
+                cContext.strokeStyle = '#000000';
+                cContext.lineWidth = 1;
+                
+                cContext.fillRect(x + 6, y - 14, 20, 10);
+                cContext.strokeRect(x + 6, y - 14, 20, 10);
+                
+                cContext.fillStyle = '#000000';
+                for (let i = 0; i <= bubbleFrame; i++) {
+                    cContext.fillRect(x + 9 + (i * 4), y - 10, 2, 2);
+                }
+            }
+        }
+
+        function getHairByRole(role) {
+            switch (role) {
+                case "Deep Researcher": return "#5c4033"; // Brown
+                case "Code Reviewer": return "#00ff33"; // Spiky green
+                case "Data Analyst": return "#ffd700"; // Blonde
+                case "Thai Academic Writer": return "#111111"; // Neat Black
+                case "General Assistant": return "#ff5500"; // Ginger
+                default: return "#9900ff"; // Purple Custom
+            }
+        }
+
+        function drawHair(cContext, x, y, bob, role, hairColor) {
+            cContext.fillStyle = hairColor;
+            if (role === 'Deep Researcher') {
+                cContext.fillRect(x + 6, y - 2 + bob, 20, 4);
+                cContext.fillRect(x + 6, y + 2 + bob, 3, 4);
+                cContext.fillRect(x + 23, y + 2 + bob, 3, 4);
+            } else if (role === 'Code Reviewer') {
+                cContext.fillRect(x + 8, y - 3 + bob, 16, 4);
+                cContext.fillRect(x + 6, y - 1 + bob, 2, 2);
+                cContext.fillRect(x + 24, y - 1 + bob, 2, 2);
+                cContext.fillRect(x + 10, y - 4 + bob, 2, 2);
+                cContext.fillRect(x + 20, y - 4 + bob, 2, 2);
+            } else if (role === 'Data Analyst') {
+                cContext.fillRect(x + 6, y - 2 + bob, 20, 5);
+                cContext.fillRect(x + 6, y + 3 + bob, 4, 6);
+                cContext.fillRect(x + 22, y + 3 + bob, 4, 6);
+            } else if (role === 'Thai Academic Writer') {
+                cContext.fillRect(x + 7, y - 2 + bob, 18, 4);
+                cContext.fillRect(x + 7, y + 2 + bob, 2, 6);
+                cContext.fillRect(x + 23, y + 2 + bob, 2, 6);
+            } else {
+                cContext.fillRect(x + 7, y - 2 + bob, 18, 4);
+                cContext.fillRect(x + 7, y + 2 + bob, 3, 3);
+                cContext.fillRect(x + 22, y + 2 + bob, 3, 3);
+            }
+        }
+
+        function drawRoleIcon(cContext, x, y, bob, role) {
+            if (role === 'Deep Researcher') {
+                // Glasses
+                cContext.fillStyle = '#000000';
+                cContext.fillRect(x + 9, y + 3 + bob, 6, 3);
+                cContext.fillRect(x + 17, y + 3 + bob, 6, 3);
+                cContext.fillStyle = '#ffffff';
+                cContext.fillRect(x + 10, y + 4 + bob, 4, 1);
+                cContext.fillRect(x + 18, y + 4 + bob, 4, 1);
+                cContext.fillStyle = '#000000';
+                cContext.fillRect(x + 15, y + 4 + bob, 2, 1);
+            } else if (role === 'Code Reviewer') {
+                // Terminal badge on side
+                cContext.fillStyle = '#00ff00';
+                cContext.fillRect(x + 25, y + bob, 6, 5);
+                cContext.fillStyle = '#000000';
+                cContext.fillRect(x + 26, y + 1 + bob, 4, 3);
+                cContext.fillStyle = '#00ff00';
+                cContext.fillRect(x + 27, y + 2 + bob, 2, 1);
+            } else if (role === 'Data Analyst') {
+                // Floaty bar chart
+                cContext.fillStyle = '#ff3333';
+                cContext.fillRect(x + 26, y + 2 + bob, 2, 4);
+                cContext.fillStyle = '#33cc33';
+                cContext.fillRect(x + 29, y + bob, 2, 6);
+            } else if (role === 'Thai Academic Writer') {
+                // Gold collar/sash
+                cContext.fillStyle = '#ffd700';
+                cContext.fillRect(x + 10, y + 14 + bob, 12, 3);
+            }
+        }
+
+        // Showcase Supervisor Bot
+        function drawShowcase() {
+            sctx.clearRect(0, 0, 64, 64);
+            const bob = Math.floor(Math.sin(frameCount * 0.07) * 2);
+            
+            // Chair backing
+            sctx.fillStyle = '#4a2c11';
+            sctx.fillRect(12, 18, 40, 32);
+            
+            // Supervisor Character (Suit & Tie)
+            sctx.fillStyle = '#1e1e24'; // black suit
+            sctx.fillRect(16, 38 + bob, 32, 26);
+            
+            // White shirt & red tie
+            sctx.fillStyle = '#ffffff';
+            sctx.fillRect(28, 38 + bob, 8, 8);
+            sctx.fillStyle = '#cc241d';
+            sctx.fillRect(31, 40 + bob, 2, 8);
+            
+            // Skin Head
+            sctx.fillStyle = '#ffdbac';
+            sctx.fillRect(20, 20 + bob, 24, 20);
+            
+            // Glasses / Mustache
+            sctx.fillStyle = '#000';
+            sctx.fillRect(23, 28 + bob, 6, 4);
+            sctx.fillRect(35, 28 + bob, 6, 4);
+            sctx.fillRect(29, 29 + bob, 6, 2);
+            sctx.fillStyle = '#4e3629';
+            sctx.fillRect(24, 35 + bob, 16, 3); // Mustache
+            
+            // Grey hair
+            sctx.fillStyle = '#a89984';
+            sctx.fillRect(18, 16 + bob, 28, 6);
+            sctx.fillRect(18, 22 + bob, 4, 8);
+            sctx.fillRect(42, 22 + bob, 4, 8);
+        }
+
+        // Live Sprite Builder Preview inside Modal
+        function drawFormPreview() {
+            if (document.getElementById('agent-modal').style.display === 'none') return;
+            
+            pctx.clearRect(0, 0, 64, 64);
+            
+            const role = document.getElementById('agent-role-select').value;
+            const shirtColor = document.getElementById('agent-avatar-color').value;
+            const bob = Math.floor(Math.sin(frameCount * 0.1) * 2);
+            
+            const skinColor = '#ffdbac';
+            const hairColor = getHairByRole(role);
+            
+            // 2x Scaled Drawing
+            pctx.save();
+            pctx.translate(16, 8); // center in 64x64 canvas
+            
+            // Body
+            pctx.fillStyle = shirtColor;
+            pctx.fillRect(6, 24 + bob, 20, 20);
+            
+            // Head
+            pctx.fillStyle = skinColor;
+            pctx.fillRect(8, 14 + bob, 16, 12);
+            
+            // Eyes
+            pctx.fillStyle = '#000';
+            pctx.fillRect(11, 20 + bob, 2, 2);
+            pctx.fillRect(19, 20 + bob, 2, 2);
+            
+            // Hair
+            drawHair(pctx, 0, 14, bob, role, hairColor);
+            
+            // Icons
+            drawRoleIcon(pctx, 0, 14, bob, role);
+            
+            pctx.restore();
+        }
+
+        // --- INTERACTION & EVENT LISTENERS ---
+        function setupEventListeners() {
+            // Context menu intercept
+            canvas.addEventListener('contextmenu', e => e.preventDefault());
+            
+            // Click checks on office grid
+            canvas.addEventListener('mousedown', handleCanvasClick);
+            canvas.addEventListener('mousemove', handleCanvasMouseMove);
+            canvas.addEventListener('mouseleave', () => { hoveredTile = null; });
+            
+            // Context menu items
+            document.getElementById('menu-chat').addEventListener('click', () => {
+                if (selectedAgentForMenu) openChatPanel(selectedAgentForMenu);
+                hideContextMenu();
+            });
+            document.getElementById('menu-edit').addEventListener('click', () => {
+                if (selectedAgentForMenu) openAgentModal(selectedAgentForMenu);
+                hideContextMenu();
+            });
+            document.getElementById('menu-compact').addEventListener('click', () => {
+                if (selectedAgentForMenu) compactAgentMemory(selectedAgentForMenu);
+                hideContextMenu();
+            });
+            document.getElementById('menu-delete').addEventListener('click', () => {
+                if (selectedAgentForMenu) openConfirmModal(selectedAgentForMenu);
+                hideContextMenu();
+            });
+            
+            // Hide context menu on outer clicks
+            document.addEventListener('click', hideContextMenu);
+            
+            // Modal controls
+            document.getElementById('new-agent-btn').addEventListener('click', () => openAgentModal(null));
+            document.getElementById('agent-modal-cancel').addEventListener('click', closeAgentModal);
+            document.getElementById('agent-form').addEventListener('submit', handleAgentFormSubmit);
+            
+            document.getElementById('settings-btn').addEventListener('click', openSettingsModal);
+            document.getElementById('settings-modal-close').addEventListener('click', closeSettingsModal);
+            document.getElementById('settings-export-btn').addEventListener('click', exportAgentsBackup);
+            document.getElementById('settings-session-end-btn').addEventListener('click', () => endSessionCompacts(false));
+            
+            // Preset values loader
+            document.getElementById('agent-role-select').addEventListener('change', (e) => {
+                const role = e.target.value;
+                const promptTextarea = document.getElementById('agent-system-prompt');
+                if (ROLE_PRESETS[role] !== undefined) {
+                    promptTextarea.value = ROLE_PRESETS[role];
+                }
+            });
+
+            // Custom manual model field display
+            document.getElementById('agent-model-select').addEventListener('change', (e) => {
+                const customModelField = document.getElementById('agent-model-custom');
+                if (e.target.value === "CUSTOM_INPUT") {
+                    customModelField.style.display = "block";
+                    customModelField.required = true;
+                } else {
+                    customModelField.style.display = "none";
+                    customModelField.required = false;
+                }
+            });
+
+            // Chat actions
+            document.getElementById('close-chat-btn').addEventListener('click', closeChat);
+            document.getElementById('chat-send-btn').addEventListener('click', triggerSend);
+            document.getElementById('chat-input-textarea').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') triggerSend();
+            });
+            document.getElementById('chat-compact-btn').addEventListener('click', () => {
+                if (activeAgent) compactAgentMemory(activeAgent);
+            });
+            document.getElementById('chat-chain-btn').addEventListener('click', openChainPopover);
+            document.getElementById('chat-clear-btn').addEventListener('click', clearChatLog);
+            
+            // Chain Popover
+            document.getElementById('chain-cancel-btn').addEventListener('click', closeChainPopover);
+            document.getElementById('chain-submit-btn').addEventListener('click', executeManualChain);
+            
+            // Confirmation Modal
+            document.getElementById('confirm-cancel-btn').addEventListener('click', closeConfirmModal);
+            document.getElementById('confirm-submit-btn').addEventListener('click', executeFireAgent);
+        }
+
+        function getAgentAt(gridX, gridY) {
+            const activeSlots = getActiveDeskSlots();
+            for (let agent of agents) {
+                if (agent.slot >= activeSlots) continue;
+                const slot = DESK_SLOTS[agent.slot];
+                if (slot) {
+                    // Clicks can hit the chair/character (slot.y - 1) or desk surface (slot.y)
+                    if (slot.x === gridX && (slot.y === gridY || slot.y - 1 === gridY)) {
+                        return agent;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function handleCanvasClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            
+            const gridX = Math.floor(mouseX / TILE_SIZE);
+            const gridY = Math.floor(mouseY / TILE_SIZE);
+            
+            const agent = getAgentAt(gridX, gridY);
+            
+            if (e.button === 2) {
+                // Right click
+                e.preventDefault();
+                if (agent) {
+                    selectedAgentForMenu = agent;
+                    showContextMenu(e.clientX, e.clientY);
+                } else {
+                    hideContextMenu();
+                }
+            } else if (e.button === 0) {
+                // Left click
+                hideContextMenu();
+                if (agent) {
+                    openChatPanel(agent);
+                }
+            }
+        }
+
+        function handleCanvasMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            
+            const gridX = Math.floor(mouseX / TILE_SIZE);
+            const gridY = Math.floor(mouseY / TILE_SIZE);
+            
+            hoveredTile = { x: gridX, y: gridY };
+            
+            const agent = getAgentAt(gridX, gridY);
+            if (agent) {
+                canvas.style.cursor = 'pointer';
+            } else {
+                canvas.style.cursor = 'default';
+            }
+        }
+
+        function showContextMenu(clientX, clientY) {
+            const menu = document.getElementById('context-menu');
+            menu.style.display = 'block';
+            menu.style.left = `${clientX}px`;
+            menu.style.top = `${clientY}px`;
+        }
+
+        function hideContextMenu() {
+            document.getElementById('context-menu').style.display = 'none';
+        }
+
+        // --- DASHBOARD TICKER ---
+        function addTickerMessage(text) {
+            const ticker = document.getElementById('ticker-message');
+            const time = new Date().toTimeString().split(' ')[0];
+            ticker.textContent = `[${time}] ${text}`;
+        }
+
+        function updateDashboard() {
+            const occupied = agents.filter(a => a.slot < getActiveDeskSlots()).length;
+            const total = getActiveDeskSlots();
+            document.getElementById('agent-count-badge').textContent = `${occupied} / ${total}`;
+        }
+
+        function updateClock() {
+            const date = new Date();
+            const time = date.toTimeString().split(' ')[0];
+            document.getElementById('system-time-display').textContent = time;
+        }
+
+        // --- AGENT FORM & CREATION MODAL ---
+        function buildColorSwatches() {
+            const container = document.getElementById('color-picker-grid');
+            container.innerHTML = '';
+            
+            RETRO_COLORS.forEach((color, idx) => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = color;
+                if (idx === 0) swatch.classList.add('selected');
+                
+                swatch.addEventListener('click', () => {
+                    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+                    swatch.classList.add('selected');
+                    document.getElementById('agent-avatar-color').value = color;
+                });
+                container.appendChild(swatch);
+            });
+        }
+
+        function openAgentModal(agentToEdit = null) {
+            const modal = document.getElementById('agent-modal');
+            const overlay = document.getElementById('modal-overlay');
+            const form = document.getElementById('agent-form');
+            form.reset();
+            
+            // Populating select dropdown for chain route targets
+            const chainTargetSelect = document.getElementById('agent-chain-target');
+            chainTargetSelect.innerHTML = '<option value="">None (Stop)</option>';
+            agents.forEach(a => {
+                if (!agentToEdit || a.id !== agentToEdit.id) {
+                    const opt = document.createElement('option');
+                    opt.value = a.id;
+                    opt.textContent = a.name;
+                    chainTargetSelect.appendChild(opt);
+                }
+            });
+
+            if (agentToEdit) {
+                // Editing
+                document.getElementById('agent-modal-title').textContent = "EDIT AGENT CONTRACT";
+                document.getElementById('agent-id').value = agentToEdit.id;
+                document.getElementById('agent-name').value = agentToEdit.name;
+                document.getElementById('agent-role-select').value = agentToEdit.role;
+                document.getElementById('agent-system-prompt').value = agentToEdit.system_prompt;
+                
+                // Color Select
+                document.getElementById('agent-avatar-color').value = agentToEdit.avatar_color;
+                document.querySelectorAll('.color-swatch').forEach(swatch => {
+                    if (swatch.style.backgroundColor === rgbToHex(agentToEdit.avatar_color) || swatch.style.backgroundColor === agentToEdit.avatar_color) {
+                        swatch.classList.add('selected');
+                    } else {
+                        swatch.classList.remove('selected');
+                    }
+                });
+
+                // Check Model in options, else select Custom manual model
+                const modelSelect = document.getElementById('agent-model-select');
+                const modelCustom = document.getElementById('agent-model-custom');
+                let foundModel = false;
+                for (let i = 0; i < modelSelect.options.length; i++) {
+                    if (modelSelect.options[i].value === agentToEdit.model) {
+                        modelSelect.selectedIndex = i;
+                        foundModel = true;
+                        break;
+                    }
+                }
+                
+                if (!foundModel) {
+                    modelSelect.value = "CUSTOM_INPUT";
+                    modelCustom.value = agentToEdit.model;
+                    modelCustom.style.display = "block";
+                    modelCustom.required = true;
+                } else {
+                    modelCustom.style.display = "none";
+                    modelCustom.required = false;
+                }
+
+                document.getElementById('agent-compact-count').value = agentToEdit.auto_compact?.on_message_count || 20;
+                document.getElementById('agent-compact-session').checked = agentToEdit.auto_compact?.on_session_end !== false;
+                document.getElementById('agent-chain-target').value = agentToEdit.next_agent_id || "";
+            } else {
+                // Creating new
+                document.getElementById('agent-modal-title').textContent = "HIRE NEW AGENT";
+                document.getElementById('agent-id').value = "";
+                document.getElementById('agent-system-prompt').value = ROLE_PRESETS["Deep Researcher"];
+                document.getElementById('agent-avatar-color').value = RETRO_COLORS[0];
+                document.querySelectorAll('.color-swatch').forEach((s, idx) => {
+                    if (idx === 0) s.classList.add('selected');
+                    else s.classList.remove('selected');
+                });
+                document.getElementById('agent-model-select').selectedIndex = 0;
+                const mSelect = document.getElementById('agent-model-select');
+                const mCustom = document.getElementById('agent-model-custom');
+                if (mSelect.value === "CUSTOM_INPUT") {
+                    mCustom.style.display = "block";
+                    mCustom.required = true;
+                } else {
+                    mCustom.style.display = "none";
+                    mCustom.required = false;
+                }
+                document.getElementById('agent-compact-count').value = 20;
+                document.getElementById('agent-compact-session').checked = true;
+                document.getElementById('agent-chain-target').value = "";
+            }
+
+            modal.style.display = 'block';
+            overlay.style.display = 'block';
+        }
+
+        function closeAgentModal() {
+            document.getElementById('agent-modal').style.display = 'none';
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
+
+        function rgbToHex(rgb) {
+            if (rgb.startsWith('#')) return rgb;
+            const parts = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+            if (!parts) return rgb;
+            delete(parts[0]);
+            for (let i = 1; i <= 3; ++i) {
+                parts[i] = parseInt(parts[i], 10).toString(16);
+                if (parts[i].length == 1) parts[i] = '0' + parts[i];
+            }
+            return '#' + parts.join('');
+        }
+
+        async function handleAgentFormSubmit() {
+            const activeSlots = getActiveDeskSlots();
+            const id = document.getElementById('agent-id').value;
+            const name = document.getElementById('agent-name').value.trim();
+            const role = document.getElementById('agent-role-select').value;
+            
+            const modelSelect = document.getElementById('agent-model-select').value;
+            const model = modelSelect === "CUSTOM_INPUT" ? document.getElementById('agent-model-custom').value.trim() : modelSelect;
+            
+            const systemPrompt = document.getElementById('agent-system-prompt').value.trim();
+            const avatarColor = document.getElementById('agent-avatar-color').value;
+            const compactCount = parseInt(document.getElementById('agent-compact-count').value);
+            const compactSession = document.getElementById('agent-compact-session').checked;
+            const nextAgentId = document.getElementById('agent-chain-target').value;
+
+            // Find slot
+            let slot = -1;
+            if (id) {
+                // Edit mode, keep same slot
+                const existing = agents.find(a => a.id === id);
+                if (existing) slot = existing.slot;
+            } else {
+                // Find first free slot
+                const occupiedSlots = agents.map(a => a.slot);
+                for (let i = 0; i < activeSlots; i++) {
+                    if (!occupiedSlots.includes(i)) {
+                        slot = i;
+                        break;
+                    }
+                }
+                if (slot === -1) {
+                    alert("The office is full! Fire an agent or increase desk slots in settings.");
+                    return;
+                }
+            }
+
+            const agentData = {
+                id: id || crypto.randomUUID(),
+                name: name,
+                role: role,
+                model: model,
+                system_prompt: systemPrompt,
+                avatar_color: avatarColor,
+                auto_compact: {
+                    on_message_count: compactCount,
+                    on_session_end: compactSession,
+                    manual: true
+                },
+                memory: id ? (agents.find(a => a.id === id)?.memory || []) : [],
+                next_agent_id: nextAgentId || null,
+                slot: slot
+            };
+
+            if (id) {
+                await saveAgent(agentData);
+                addTickerMessage(`Updated contract details for ${name}.`);
+            } else {
+                await createAgent(agentData);
+            }
+
+            closeAgentModal();
+            updateDashboard();
+        }
+
+        // --- FIRE / DELETE AGENT MODAL ---
+        function openConfirmModal(agent) {
+            selectedAgentForMenu = agent;
+            document.getElementById('confirm-modal-text').innerHTML = `Are you sure you want to terminate <strong>${agent.name}</strong>'s contract? Their memory and files will be permanently deleted!`;
+            document.getElementById('confirm-modal').style.display = 'block';
+            document.getElementById('modal-overlay').style.display = 'block';
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').style.display = 'none';
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
+
+        async function executeFireAgent() {
+            if (selectedAgentForMenu) {
+                await deleteAgent(selectedAgentForMenu.id);
+            }
+            closeConfirmModal();
+        }
+
+        // --- GLOBAL SETTINGS MODAL ---
+        function openSettingsModal() {
+            document.getElementById('settings-modal').style.display = 'block';
+            document.getElementById('modal-overlay').style.display = 'block';
+        }
+
+        function closeSettingsModal() {
+            saveGlobalSettings();
+            document.getElementById('settings-modal').style.display = 'none';
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
+
+        function exportAgentsBackup() {
+            window.location.href = '/agents/export';
+        }
+
+        // --- CHAT SYSTEM ---
+        function openChatPanel(agent) {
+            activeAgent = agent;
+            
+            const panel = document.getElementById('chat-panel');
+            document.getElementById('chat-agent-name').textContent = agent.name;
+            document.getElementById('chat-agent-role').textContent = agent.role;
+            
+            renderChatMessages(agent);
+            panel.classList.add('open');
+            
+            document.getElementById('chat-input-textarea').focus();
+        }
+
+        function closeChat() {
+            document.getElementById('chat-panel').classList.remove('open');
+            activeAgent = null;
+            closeChainPopover();
+        }
+
+        function renderChatMessages(agent) {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = '';
+            
+            if (!agent.memory || agent.memory.length === 0) {
+                container.innerHTML = `<div class="message-bubble system">Memory clear. Start chatting with ${agent.name}.</div>`;
+                return;
+            }
+            
+            agent.memory.forEach(msg => {
+                const bubble = document.createElement('div');
+                bubble.className = `message-bubble ${msg.role}`;
+                
+                // Escape HTML for safety, but format spacing
+                const contentText = msg.content.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+                bubble.innerHTML = contentText;
+                
+                // Add timestamp / meta metadata if user/agent
+                if (msg.role !== 'system') {
+                    const meta = document.createElement('div');
+                    meta.className = 'message-meta';
+                    meta.textContent = msg.role === 'user' ? 'USER' : agent.name;
+                    bubble.appendChild(meta);
+                }
+                
+                container.appendChild(bubble);
+            });
+            
+            // Auto scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function triggerSend() {
+            if (!activeAgent || activeAgent.thinking) return;
+            
+            const textarea = document.getElementById('chat-input-textarea');
+            const text = textarea.value.trim();
+            if (!text) return;
+            
+            await handleSend(activeAgent, text);
+        }
+
+        async function handleSend(agent, text) {
+            // Add user message
+            agent.memory.push({ role: 'user', content: text });
+            renderChatMessages(agent);
+            
+            document.getElementById('chat-input-textarea').value = '';
+            await saveAgent(agent);
+            
+            // Start thinking state
+            agent.thinking = true;
+            addTickerMessage(`${agent.name} is typing...`);
+            
+            // Draw thinking indicators
+            const container = document.getElementById('chat-messages');
+            const thinkingBubble = document.createElement('div');
+            thinkingBubble.className = 'message-bubble agent thinking-temp';
+            thinkingBubble.innerHTML = `Thinking<span class="thinking-dots">...</span>`;
+            container.appendChild(thinkingBubble);
+            container.scrollTop = container.scrollHeight;
+
+            try {
+                const url = getOllamaBaseUrl();
+                const res = await fetch(`${url}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: agent.model,
+                        messages: [
+                            { role: 'system', content: agent.system_prompt },
+                            ...agent.memory
+                        ],
+                        stream: false
+                    })
+                });
+
+                // Remove temp bubble
+                const temp = container.querySelector('.thinking-temp');
+                if (temp) temp.remove();
+
+                if (!res.ok) {
+                    throw new Error(`Ollama Server returned code ${res.status}`);
+                }
+
+                const data = await res.json();
+                const reply = data.message.content;
+                
+                agent.memory.push({ role: 'assistant', content: reply });
+                agent.thinking = false;
+                
+                await saveAgent(agent);
+                renderChatMessages(agent);
+                addTickerMessage(`${agent.name} completed answer.`);
+
+                // Compaction check
+                const limit = agent.auto_compact?.on_message_count || 20;
+                const count = agent.memory.filter(m => m.role !== 'system').length;
+                if (count >= limit) {
+                    await compactAgentMemory(agent);
+                }
+
+                // Chain check
+                const globalChainMode = document.getElementById('setting-auto-chain').checked;
+                if (globalChainMode && agent.next_agent_id) {
+                    const nextAgent = agents.find(a => a.id === agent.next_agent_id);
+                    if (nextAgent && nextAgent.slot < getActiveDeskSlots()) {
+                        addTickerMessage(`Routing output to ${nextAgent.name} (Chain Exec)...`);
+                        setTimeout(() => {
+                            openChatPanel(nextAgent);
+                            handleSend(nextAgent, reply);
+                        }, 1500);
+                    }
+                }
+
+            } catch (e) {
+                console.error(e);
+                const temp = container.querySelector('.thinking-temp');
+                if (temp) temp.remove();
+                
+                agent.thinking = false;
+                agent.memory.push({ 
+                    role: 'system', 
+                    content: `System Error: Failed to fetch reply from Ollama. Check endpoint connectivity or whether the model '${agent.model}' is available. (${e.message})` 
+                });
+                renderChatMessages(agent);
+                addTickerMessage(`Connection error for ${agent.name}.`);
+            }
+        }
+
+        function clearChatLog() {
+            if (!activeAgent) return;
+            activeAgent.memory = [];
+            saveAgent(activeAgent);
+            renderChatMessages(activeAgent);
+            addTickerMessage(`Cleared memory logs for ${activeAgent.name}.`);
+        }
+
+        // --- CONTEXT COMPACTION (MEMORY) ---
+        async function compactAgentMemory(agent) {
+            const messagesToCompact = agent.memory.slice(0, -4);
+            const messagesToKeep = agent.memory.slice(-4);
+            
+            if (messagesToCompact.length === 0) {
+                addTickerMessage(`Compaction skipped for ${agent.name}: insufficient messages.`);
+                return;
+            }
+            
+            addTickerMessage(`Compacting memory logs for ${agent.name}...`);
+            agent.thinking = true;
+            
+            // Format logs to send for summarization
+            const logDump = messagesToCompact
+                .map(m => `${m.role.toUpperCase()}: ${m.content}`)
+                .join("\n\n");
+            
+            const summaryPrompt = `Summarize the following conversation into a compact but complete context summary that preserves all important facts, decisions, and outputs:\n\n${logDump}`;
+            
+            try {
+                const url = getOllamaBaseUrl();
+                const res = await fetch(`${url}/api/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: agent.model,
+                        prompt: summaryPrompt,
+                        stream: false
+                    })
+                });
+                
+                if (!res.ok) throw new Error("Compaction request to Ollama failed.");
+                
+                const data = await res.json();
+                const summary = data.response;
+                
+                // Replace old memory with single compacted summary block + last 4 intact messages
+                agent.memory = [
+                    { role: 'system', content: `Previous conversation summary: ${summary}` },
+                    ...messagesToKeep
+                ];
+                
+                agent.thinking = false;
+                await saveAgent(agent);
+                
+                if (activeAgent && activeAgent.id === agent.id) {
+                    renderChatMessages(agent);
+                }
+                
+                addTickerMessage(`Memory auto-compacted successfully for ${agent.name}.`);
+            } catch (e) {
+                console.error("Compaction failed", e);
+                agent.thinking = false;
+                addTickerMessage(`Warning: Memory compaction failed for ${agent.name} (Ollama connection issues).`);
+            }
+        }
+
+        // --- AGENT OUTPUT CHAINING ---
+        function populateAgentChainDropdowns() {
+            // Populate Create/Edit Form Chain Route Option
+            const targetSelect = document.getElementById('agent-chain-target');
+            const currentVal = targetSelect.value;
+            targetSelect.innerHTML = '<option value="">None (Stop)</option>';
+            
+            agents.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = a.name;
+                targetSelect.appendChild(opt);
+            });
+            targetSelect.value = currentVal;
+        }
+
+        function openChainPopover() {
+            if (!activeAgent) return;
+            
+            // Must have at least 1 response to route
+            const lastAssistantMsg = [...activeAgent.memory].reverse().find(m => m.role === 'assistant');
+            if (!lastAssistantMsg) {
+                alert("There are no agent responses to chain yet!");
+                return;
+            }
+
+            const popover = document.getElementById('chain-popover');
+            const select = document.getElementById('chain-agent-select');
+            select.innerHTML = '';
+            
+            // Populating selections (excluding current agent)
+            const options = agents.filter(a => a.id !== activeAgent.id && a.slot < getActiveDeskSlots());
+            if (options.length === 0) {
+                alert("No other agents are currently available to chain to!");
+                return;
+            }
+            
+            options.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = a.name;
+                select.appendChild(opt);
+            });
+            
+            popover.style.display = 'block';
+        }
+
+        function closeChainPopover() {
+            document.getElementById('chain-popover').style.display = 'none';
+        }
+
+        function executeManualChain() {
+            if (!activeAgent) return;
+            
+            const lastAssistantMsg = [...activeAgent.memory].reverse().find(m => m.role === 'assistant');
+            if (!lastAssistantMsg) return;
+            
+            const targetId = document.getElementById('chain-agent-select').value;
+            const targetAgent = agents.find(a => a.id === targetId);
+            
+            if (targetAgent) {
+                const replyText = lastAssistantMsg.content;
+                closeChat();
+                
+                // Open next agent panel and pre-fill input
+                openChatPanel(targetAgent);
+                document.getElementById('chat-input-textarea').value = replyText;
+                
+                addTickerMessage(`Chained output from source agent to ${targetAgent.name}.`);
+            }
+            closeChainPopover();
+        }
+
+        // --- SESSION END (BULK SAVING & COMPACTION) ---
+        async function endSessionCompacts(isUnloading = false) {
+            if (!isUnloading) {
+                addTickerMessage("Ending Session: compacting all active agents...");
+                document.getElementById('settings-session-end-btn').disabled = true;
+                document.getElementById('settings-session-end-btn').textContent = "COMPACTING...";
+            }
+            
+            const compactPromises = agents.map(async (agent) => {
+                if (agent.memory.length > 4 && agent.auto_compact?.on_session_end !== false) {
+                    const messagesToCompact = agent.memory.slice(0, -4);
+                    const messagesToKeep = agent.memory.slice(-4);
+                    
+                    const logDump = messagesToCompact
+                        .map(m => `${m.role.toUpperCase()}: ${m.content}`)
+                        .join("\n\n");
+                    
+                    const summaryPrompt = `Summarize the following conversation into a compact but complete context summary that preserves all important facts, decisions, and outputs:\n\n${logDump}`;
+                    
+                    try {
+                        const url = getOllamaBaseUrl();
+                        // Use keepalive for page exit events
+                        const res = await fetch(`${url}/api/generate`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            keepalive: true,
+                            body: JSON.stringify({
+                                model: agent.model,
+                                prompt: summaryPrompt,
+                                stream: false
+                            })
+                        });
+                        
+                        if (res.ok) {
+                            const data = await res.json();
+                            agent.memory = [
+                                { role: 'system', content: `Previous conversation summary: ${data.response}` },
+                                ...messagesToKeep
+                            ];
+                            
+                            // Send sync to python backend
+                            await fetch(`/agents/${agent.id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                keepalive: true,
+                                body: JSON.stringify(agent)
+                            });
+                        }
+                    } catch (e) {
+                        console.error("Session exit compaction failed for agent " + agent.name, e);
+                    }
+                }
+            });
+
+            await Promise.all(compactPromises);
+            
+            if (!isUnloading) {
+                document.getElementById('settings-session-end-btn').disabled = false;
+                document.getElementById('settings-session-end-btn').textContent = "END SESSION (COMPACT & SAVE)";
+                closeSettingsModal();
+                fetchAgents(); // Reload state
+                addTickerMessage("Session successfully ended. Active agent memories compacted.");
+                alert("Session ended! All agent memories have been compacted and saved to disk.");
+            }
+        }
+    </script>
+</body>
+</html>
