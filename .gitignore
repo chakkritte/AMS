@@ -1,0 +1,12 @@
+# Ignore agent configuration JSONs generated during runtime
+agents/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# OS files
+.DS_Store
+Thumbs.db
